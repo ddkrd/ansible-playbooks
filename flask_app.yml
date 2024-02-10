@@ -1,0 +1,60 @@
+---
+- name: Deploy Flask App
+  hosts: web
+  vars:
+    app_directory: /home/debian/flaskapp
+    git_repo: https://github.com/ddkrd/VG.git
+    python_version: 3.8
+  become: yes
+  tasks:
+
+    - name: Install system packages
+      apt:
+        name:
+          - git
+          - python3-pip
+          - python3-venv
+          - gunicorn
+          - figlet
+        state: present
+        update_cache: yes
+
+    - name: Clone the Flask app from Git repository
+      git:
+        repo: "{{ git_repo }}"
+        dest: "{{ app_directory }}"
+        clone: yes
+        update: yes
+      register: git
+
+    - name: Setup Python virtual environment and install dependencies
+      block:
+        - name: Create virtual environment
+          shell:
+            cmd: python3 -m venv venv
+            chdir: "{{ app_directory }}"
+
+        - name: Install Flask and other dependencies
+          shell: 
+            cmd: "{{ app_directory }}/venv/bin/pip3 install -r requirements.txt gunicorn"
+            chdir: "{{ app_directory }}"
+      when: git.changed
+
+    - name: Configure Flask app as a systemd service
+      template:
+        src: flaskapp.service.j2
+        dest: /etc/systemd/system/flaskapp.service
+      notify: Restart Flask app
+
+    - name: Ensure the Flask application service is enabled and running
+      systemd:
+        name: flaskapp
+        state: started
+        enabled: yes
+
+  handlers:
+    - name: Restart Flask app
+      systemd:
+        name: flaskapp
+        state: restarted
+        daemon_reload: yes

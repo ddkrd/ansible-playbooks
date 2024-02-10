@@ -1,0 +1,14 @@
+[Unit]
+Description=Gunicorn instance to serve my Flask app
+After=network.target
+
+[Service]
+User=debian
+Group=debian
+WorkingDirectory={{ app_directory }}
+Environment="PATH={{ app_directory }}/venv/bin"
+ExecStart={{ app_directory }}/venv/bin/gunicorn -w 4 -b 0.0.0.0:5000 --access-logfile /tmp/flask-access.log --error-logfile /tmp/flask-error.log mixologyfy:app
+
+
+[Install]
+WantedBy=multi-user.target
