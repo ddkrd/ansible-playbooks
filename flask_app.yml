@@ -1,6 +1,7 @@
 ---
 - name: Deploy Flask App
-  hosts: web
+  hosts: localhost
+  connection: local
   vars:
     app_directory: /home/debian/flaskapp
     git_repo: https://github.com/ddkrd/VG.git
